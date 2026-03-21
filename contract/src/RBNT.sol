@@ -109,8 +109,8 @@ contract RBNT {
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         if (_to == address(0)) revert Error__ZeroAddress();
         if (_from == address(0)) revert Error__ZeroAddress();
-        if (_value > balances[_from]) revert Error__InsufficientBalance();
         if (_value > allowances[_from][msg.sender]) revert Error__InsufficientAllowance();
+        if (_value > balances[_from]) revert Error__InsufficientBalance();
 
         allowances[_from][msg.sender] = allowances[_from][msg.sender] - _value;
         balances[_from] = balances[_from] - _value;

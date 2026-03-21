@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.33;
 
+import {console} from "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {RBNT} from "../src/RBNT.sol";
 
@@ -17,7 +18,7 @@ event Approval(address indexed _owner, address indexed _spender, uint256 _value)
 error Error__ZeroAddress();
 //     error Error__ZeroValue();
 error Error__InsufficientBalance();
-// error Error__InsufficientAllowance();
+error Error__InsufficientAllowance();
 
 contract RBNTTest is Test {
     RBNT public rbnt;
@@ -38,6 +39,7 @@ contract RBNTTest is Test {
     /***  ERC20Basics
      * transfer
      * approve
+     * transferFrom
      */
 
     function test__successfulTransfer() public {
@@ -109,6 +111,93 @@ contract RBNTTest is Test {
 
         vm.stopPrank();
     }
+
+    function test__sucessfulTransferFrom() public {
+        vm.startPrank(owner);
+
+        rbnt.approve(contractAddress, approvedAmount);
+        //contract has allowance; contract try spend on my behalf
+        uint256 recipientPrevBal = rbnt.balanceOf(recipient);
+        uint256 prevAllowance = rbnt.allowance(owner, contractAddress);
+        uint256 ownerPrevBal = rbnt.balanceOf(owner);
+
+        changePrank(contractAddress);
+        // Emits Transfer
+        vm.expectEmit(true, true, false, false);
+        emit Transfer(owner, recipient, approvedAmount);
+        // console.log(prevAllowance);
+        rbnt.transferFrom(owner, recipient, approvedAmount);
+        // Works with sufficient allowance + balance
+
+        uint256 currentAllowance = rbnt.allowance(owner, contractAddress);
+        uint256 ownerCurrentBal = rbnt.balanceOf(owner);
+        uint256 recipientCurrentBal = rbnt.balanceOf(recipient);
+
+        // Deducts allowance correctly
+        // Updates balances correctly
+        assertEq(currentAllowance, prevAllowance - approvedAmount);
+        assertEq(ownerCurrentBal, ownerPrevBal - approvedAmount);
+        assertEq(recipientCurrentBal, approvedAmount + recipientPrevBal);
+
+        vm.stopPrank();
+    }
+
+    function test__transferFromEdgeCaseI() public {
+        vm.startPrank(owner);
+
+        uint256 spikedAmount = approvedAmount + 200;
+        rbnt.approve(contractAddress, approvedAmount);
+        //contract has allowance; contract try spend on my behalf
+
+        changePrank(contractAddress);
+        // Exceeds allowance → revert
+        vm.expectRevert(abi.encodeWithSelector(Error__InsufficientAllowance.selector));
+        rbnt.transferFrom(owner, recipient, spikedAmount);
+        vm.stopPrank();
+    }
+
+    function test__transferFromEdgeCaseII() public {
+        vm.startPrank(owner);
+
+        uint256 spikedAmount = approvedAmount + 200;
+        rbnt.approve(contractAddress, spikedAmount);
+        //contract has allowance; contract try spend on my behalf
+
+        changePrank(contractAddress);
+
+        // Exceeds balance → revert
+        vm.expectRevert(abi.encodeWithSelector(Error__InsufficientBalance.selector));
+        rbnt.transferFrom(owner, recipient, spikedAmount);
+        vm.stopPrank();
+    }
+
+    function test__transferFromEdgeCaseIII() public {
+        vm.startPrank(owner);
+
+        rbnt.approve(contractAddress, approvedAmount);
+
+        changePrank(contractAddress);
+
+        // From = zero address → revert
+        vm.expectRevert(abi.encodeWithSelector(Error__ZeroAddress.selector));
+        rbnt.transferFrom(zeroAddress, recipient, approvedAmount);
+        vm.stopPrank();
+    }
+
+    function test__transferFromEdgeCaseIV() public {
+        vm.startPrank(owner);
+
+        rbnt.approve(contractAddress, approvedAmount);
+
+        changePrank(contractAddress);
+
+        // To = zero address → revert
+        vm.expectRevert(abi.encodeWithSelector(Error__ZeroAddress.selector));
+        rbnt.transferFrom(zeroAddress, recipient, approvedAmount);
+        vm.stopPrank();
+    }
+
+    // Edge cases:
 
     // Mint
     // Faucet
