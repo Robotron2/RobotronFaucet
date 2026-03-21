@@ -1,0 +1,7 @@
+export const FAUCET_COOLDOWN_HOURS = 24;
+export const FAUCET_AMOUNT = 100;
+
+export const CONSTANTS = {
+  FAUCET_COOLDOWN_HOURS,
+  FAUCET_AMOUNT,
+};
