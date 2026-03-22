@@ -10,12 +10,19 @@ import { useAppContext } from "../../hooks/context/useAppContext"
 
 export const FaucetCard: React.FC = () => {
 	const { state } = useAppContext()
-	const { claim, status } = useFaucet()
-	const { formattedTime, isOnCooldown } = useCooldown()
+	const { claim, status, errorMessage, resetStatus } = useFaucet()
+	const { formattedTime, isOnCooldown, fetchCooldown } = useCooldown()
 
 	const handleClaim = async () => {
 		if (!state.isConnected || isOnCooldown) return
+
 		await claim()
+		
+		// Force a slight delay to beat potential RPC block-read latency
+		setTimeout(async () => {
+			await fetchCooldown()
+			resetStatus()
+		}, 3000)
 	}
 
 	return (
@@ -38,12 +45,15 @@ export const FaucetCard: React.FC = () => {
 						</span>
 						<span className="text-sm font-bold text-[#e1e1e7]">100 RBNT</span>
 					</div>
+
 					<div className="flex flex-col text-right">
 						<span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
 							COOLDOWN
 						</span>
 						<span
-							className={`text-sm font-bold tracking-wider ${isOnCooldown ? "text-amber-500" : "text-[#00E676]"}`}>
+							className={`text-sm font-bold tracking-wider ${
+								isOnCooldown ? "text-amber-500" : "text-[#00E676]"
+							}`}>
 							{isOnCooldown ? formattedTime : "24:00:00"}
 						</span>
 					</div>
@@ -55,22 +65,23 @@ export const FaucetCard: React.FC = () => {
 					variant="primary"
 					className="w-full bg-[#00E676] hover:bg-[#00c968] text-[#0B0E11] shadow-[0_0_15px_rgba(0,230,118,0.2)]"
 					onClick={handleClaim}
-					disabled={isOnCooldown || !state.isConnected}
+					disabled={isOnCooldown || !state.isConnected || status === "loading"}
 					isLoading={status === "loading"}>
 					<RefreshCw size={16} className={status === "loading" ? "hidden" : "block"} />
-					{isOnCooldown ? "Locked" : "Claim Tokens"}
+					{status === "loading" ? "Processing..." : isOnCooldown ? "Locked" : "Claim Tokens"}
 				</Button>
 
 				{status === "success" && (
 					<Alert
-						message="Success: 100 RBNT have been added to your vault. Next claim available in 24 hours."
+						message="Success: 100 RBNT added. Next claim available in 24 hours."
 						variant="success"
 						className="text-xs py-2 bg-transparent border-none"
 					/>
 				)}
+
 				{status === "error" && (
 					<Alert
-						message="Claim failed. Please try again."
+						message={errorMessage || "Claim failed"}
 						variant="error"
 						className="text-xs py-2 bg-transparent border-none"
 					/>

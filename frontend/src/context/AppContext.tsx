@@ -7,9 +7,9 @@ const INITIAL_STATE: AppState = {
 	walletAddress: null,
 	isConnected: false,
 	balance: 0,
-	totalSupply: 7420182.5, // Using the screenshot value for total token supply randomly
+	totalSupply: 0, 
 	lastClaimTime: null,
-	owner: "0x71c765...8001", // Using the mock owner from admin screenshot
+	owner: "", 
 }
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -23,20 +23,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 	const setLastClaimTime = (timestamp: number | null) => setState((prev) => ({ ...prev, lastClaimTime: timestamp }))
 	const setOwner = (ownerAddress: string) => setState((prev) => ({ ...prev, owner: ownerAddress }))
 
-	const claim = async () => {
-		// Will be fully implemented with mockContract in Phase 4/5
-	}
-
-	const transfer = async (to: string, amount: number) => {
-		// Will be fully implemented with mockContract in Phase 4/5
-		console.log(to, amount)
-	}
-
-	const mint = async (to: string, amount: number) => {
-		// Will be fully implemented with mockContract in Phase 4/5
-		console.log(to, amount)
-	}
-
 	const value: AppContextType = {
 		state,
 		setWalletAddress,
@@ -45,10 +31,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 		setTotalSupply,
 		setLastClaimTime,
 		setOwner,
-
-		claim,
-		transfer,
-		mint,
 	}
 
 	return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -29,6 +29,8 @@ export const RBNT_ABI = [
 	"function owner() view returns (address)",
 	"function symbol() pure returns (string)",
 	"function totalSupply() view returns (uint256)",
+	"function getNextClaimTime(address user) view returns (uint256)",
+	"function canClaim(address user) view returns (bool)",
 
 	// Write Functions
 	"function approve(address _spender, uint256 _value) returns (bool)",

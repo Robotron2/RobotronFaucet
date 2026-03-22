@@ -19,8 +19,5 @@ export interface AppContextType {
 	setLastClaimTime: (timestamp: number | null) => void
 	setOwner: (ownerAddress: string) => void
 
-	// Actions (to be fleshed out with mockContract logic in Phase 4/5)
-	claim: () => Promise<void>
-	transfer: (to: string, amount: number) => Promise<void>
-	mint: (to: string, amount: number) => Promise<void>
+	// Actions (Mock actions removed)
 }

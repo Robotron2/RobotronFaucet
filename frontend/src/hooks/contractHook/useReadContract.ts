@@ -7,7 +7,7 @@ import { useAppContext } from "../context/useAppContext"
 
 export const useReadFunctions = () => {
 	const tokenContract = useTokenContract()
-	const { state, setBalance } = useAppContext()
+	const { state, setBalance, setOwner, setTotalSupply } = useAppContext()
 	const walletAddress = state.walletAddress
 	// const [isLoadingBalance, setIsLoadingBalance] = useState(false)
 	//   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -45,6 +45,7 @@ export const useReadFunctions = () => {
 		try {
 			// setIsLoadingBalance(true)
 			const owner = await tokenContract.owner()
+			if (owner) setOwner(owner)
 			return owner
 		} catch (error) {
 			toast.error("Failed to fetch token owner")
@@ -55,35 +56,21 @@ export const useReadFunctions = () => {
 		}
 	}, [tokenContract])
 
-	//   const getTokenDetail = useCallback(async () => {
-	//     if (!tokenContract) {
-	//       toast.error("token contract not found!");
-	//       return;
-	//     }
-	//     try {
-	//       setIsLoadingDetails(true);
-	//       const [name, symbol, currentSupply, maxSupply] =
-	//         await tokenContract.getTokenDetail();
-	//       return {
-	//         name,
-	//         symbol,
-	//         currentSupply: ethers.formatUnits(currentSupply, 18),
-	//         maxSupply: ethers.formatUnits(maxSupply, 18),
-	//       };
-	//     } catch (error) {
-	//       toast.error("Failed to fetch token detail");
-	//       console.error(error);
-	//       return null;
-	//     } finally {
-	//       setIsLoadingDetails(false);
-	//     }
-	//   }, [tokenContract]);
+	const getTokenDetail = useCallback(async () => {
+		if (!tokenContract) {
+			return
+		}
+		try {
+			const totalSupply = await tokenContract.totalSupply()
+			setTotalSupply(Number(ethers.formatUnits(totalSupply, 18)))
+		} catch (error) {
+			console.error("Failed to fetch token detail", error)
+		}
+	}, [tokenContract, setTotalSupply])
 
 	return {
 		getUserBalance,
 		getOwner,
-		// getTokenDetail,
-		// isLoadingBalance,
-		// isLoadingDetails,
+		getTokenDetail,
 	}
 }

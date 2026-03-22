@@ -176,5 +176,14 @@ contract RBNT {
     }
 
     // ---------------------------ERC20 HELPER END---------------------------
+    // ---------------------------FAUCET HELPER START---------------------------
+    function getNextClaimTime(address user) public view returns (uint256) {
+        return lastRequestTime[user] + COOLDOWN;
+    }
+
+    function canClaim(address user) public view returns (bool) {
+        return block.timestamp >= getNextClaimTime(user);
+    }
+    // ---------------------------FAUCET HELPER END---------------------------
 }
 

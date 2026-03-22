@@ -1,37 +1,53 @@
-import { useState, useEffect } from "react"
-import { FAUCET_COOLDOWN_HOURS } from "../utils/constants"
+import { useState, useEffect, useCallback } from "react"
+import { useTokenContract } from "./useContracts"
 import { useAppContext } from "./context/useAppContext"
 
 export const useCooldown = () => {
 	const { state } = useAppContext()
+	const tokenContract = useTokenContract(true)
 	const [remainingTime, setRemainingTime] = useState<number>(0)
+	const [canClaimUser, setCanClaimUser] = useState<boolean>(false)
 
-	useEffect(() => {
-		if (!state.lastClaimTime) {
+	const fetchCooldown = useCallback(async () => {
+		if (!tokenContract || !state.walletAddress) {
+			setCanClaimUser(false)
 			setRemainingTime(0)
 			return
 		}
-
-		const cooldownMs = FAUCET_COOLDOWN_HOURS * 60 * 60 * 1000
-
-		const updateCooldown = () => {
-			const targetTime = state.lastClaimTime! + cooldownMs
-			const now = Date.now()
-			const diff = targetTime - now
-			if (diff <= 0) {
-				setRemainingTime(0)
+		try {
+			const isEligible = await tokenContract.canClaim(state.walletAddress)
+			setCanClaimUser(isEligible)
+			
+			if (!isEligible) {
+				const time = await tokenContract.getNextClaimTime(state.walletAddress)
+				const targetTime = Number(time) * 1000
+				const now = Date.now()
+				const diff = targetTime - now
+				setRemainingTime(diff > 0 ? diff : 0)
 			} else {
-				setRemainingTime(diff)
+				setRemainingTime(0)
 			}
+		} catch (e) {
+			console.error("Failed to fetch cooldown:", e)
 		}
+	}, [tokenContract, state.walletAddress])
 
-		updateCooldown() // initial check
-		const intervalId = setInterval(updateCooldown, 1000)
+	useEffect(() => {
+		fetchCooldown()
+		const intervalId = setInterval(() => {
+			setRemainingTime((prev) => {
+				if (prev <= 1000) {
+					if (prev > 0) fetchCooldown()
+					return 0
+				}
+				return prev - 1000
+			})
+		}, 1000)
 
 		return () => clearInterval(intervalId)
-	}, [state.lastClaimTime])
+	}, [fetchCooldown])
 
-	const isOnCooldown = remainingTime > 0
+	const isOnCooldown = !canClaimUser && remainingTime > 0
 
 	const formattedTime = () => {
 		if (!isOnCooldown) return "00:00:00"
@@ -45,5 +61,6 @@ export const useCooldown = () => {
 		remainingTime,
 		isOnCooldown,
 		formattedTime: formattedTime(),
+		fetchCooldown
 	}
 }

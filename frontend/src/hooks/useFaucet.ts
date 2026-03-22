@@ -1,28 +1,22 @@
-import { useState } from "react"
-import { mockContract } from "../services/mockContract"
-import { useCooldown } from "./useCooldown"
+import { useState, useCallback } from "react"
 import { useAppContext } from "./context/useAppContext"
+import { useSyncAccount } from "./useSyncAccount"
+import { useWriteFunctions } from "./contractHook/useWriteContract"
 
 export type RequestStatus = "idle" | "loading" | "success" | "error"
 
 export const useFaucet = () => {
-	const { state, setBalance, setTotalSupply, setLastClaimTime } = useAppContext()
-	const { isOnCooldown } = useCooldown()
+	const { state } = useAppContext()
+	const { sync } = useSyncAccount()
+	const { claimFaucet } = useWriteFunctions()
 
 	const [status, setStatus] = useState<RequestStatus>("idle")
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-	const claim = async () => {
-		// Basic validations before interacting with mockContract
+	const claim = useCallback(async () => {
 		if (!state.walletAddress) {
 			setStatus("error")
 			setErrorMessage("Wallet not connected")
-			return
-		}
-
-		if (isOnCooldown) {
-			setStatus("error")
-			setErrorMessage("Cooldown not elapsed")
 			return
 		}
 
@@ -30,29 +24,37 @@ export const useFaucet = () => {
 		setErrorMessage(null)
 
 		try {
-			await mockContract.requestToken(state.walletAddress)
+			const success = await claimFaucet()
 
-			// Update local state by refetching from mock contract
-			const newBal = await mockContract.balanceOf(state.walletAddress)
-			setBalance(newBal)
+			if (!success) {
+				setStatus("error")
+				setErrorMessage("Transaction failed")
+				return
+			}
 
-			const newSupply = await mockContract.totalSupply()
-			setTotalSupply(newSupply)
-
-			const newClaimTime = await mockContract.getLastClaimTime(state.walletAddress)
-			setLastClaimTime(newClaimTime)
+			await sync()
 
 			setStatus("success")
-		} catch (err: any) {
+		} catch (err: unknown) {
 			setStatus("error")
-			setErrorMessage(err.message || "Failed to claim tokens")
-		}
-	}
 
-	const resetStatus = () => {
+			if (err instanceof Error) {
+				setErrorMessage(err.message)
+			} else {
+				setErrorMessage("Failed to claim tokens")
+			}
+		}
+	}, [state.walletAddress, claimFaucet, sync])
+
+	const resetStatus = useCallback(() => {
 		setStatus("idle")
 		setErrorMessage(null)
-	}
+	}, [])
 
-	return { claim, status, errorMessage, resetStatus }
+	return {
+		claim,
+		status,
+		errorMessage,
+		resetStatus,
+	}
 }
