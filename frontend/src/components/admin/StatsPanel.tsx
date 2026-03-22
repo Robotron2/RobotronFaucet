@@ -20,11 +20,11 @@ export const TotalSupplyCard: React.FC = () => {
 			<div className="relative z-10 flex flex-col h-full">
 				<h3 className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-6">TOTAL TOKEN SUPPLY</h3>
 
-				<div className="flex items-baseline gap-3 mb-8">
-					<span className="text-5xl md:text-6xl font-black text-[#a3ddff] tracking-tight">
-						{currentSupply.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+				<div className="flex items-baseline gap-3 mb-8 w-full">
+					<span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[#a3ddff] tracking-tight truncate max-w-[75%]">
+						{currentSupply.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 					</span>
-					<span className="text-xl font-bold text-slate-500">RBNT</span>
+					<span className="text-lg md:text-xl font-bold text-slate-500 shrink-0">RBNT</span>
 				</div>
 
 				<div className="mt-auto w-full">

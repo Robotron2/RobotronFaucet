@@ -10,9 +10,10 @@ export interface ActivityLog {
 	status: string
 	time: string
 	type: "claim" | "transfer"
+	hash: string
 }
 
-export const useActivity = () => {
+export const useActivity = (limit: number = 5) => {
 	const { state } = useAppContext()
 	const tokenContract = useTokenContract()
 	const [activities, setActivities] = useState<ActivityLog[]>([])
@@ -54,7 +55,7 @@ export const useActivity = () => {
 			;[...logsTo, ...logsFrom].forEach((log) => allLogsMap.set(log.transactionHash, log))
 			const allLogs = Array.from(allLogsMap.values())
 				.sort((a, b) => b.blockNumber - a.blockNumber)
-				.slice(0, 5) // Limit to top 5 recent events for performance
+				.slice(0, limit === 0 ? 100 : limit) // If limit is 0, return up to 100
 
 			const parsedActivities: ActivityLog[] = await Promise.all(
 				allLogs.map(async (log) => {
@@ -88,6 +89,7 @@ export const useActivity = () => {
 
 					return {
 						id: log.transactionHash,
+						hash: log.transactionHash,
 						title: isMint
 							? "Faucet Claim"
 							: isIncoming

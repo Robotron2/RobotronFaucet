@@ -56,7 +56,7 @@ export const WalletCard: React.FC = () => {
 			<div className="mt-auto pt-4">
 				<p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-2">AVAILABLE BALANCE</p>
 				<div className="flex items-baseline gap-2">
-					<span className="text-5xl font-bold text-[#a3ddff] tracking-tight">
+					<span className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#a3ddff] tracking-tight truncate max-w-[200px] sm:max-w-[250px] md:max-w-xs">
 						{/* {state.balance} */}
 						{state.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 					</span>

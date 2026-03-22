@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import Landing from "./pages/Landing"
 import Dashboard from "./pages/Dashboard"
 import Admin from "./pages/Admin"
+import History from "./pages/History"
 import PageWrapper from "./components/layout/PageWrapper"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -55,7 +56,7 @@ const AppRoutes: React.FC = () => {
 				<Route path="/" element={<Landing />} />
 				<Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 				<Route path="/faucet" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-				<Route path="/history" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+				<Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
 				<Route path="/leaderboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 				<Route path="/settings" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 				<Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
