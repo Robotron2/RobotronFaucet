@@ -13,8 +13,8 @@ const networks: [AppKitNetwork, ...AppKitNetwork[]] = [liskSepolia]
 const metadata = {
 	name: "Faucet dApp",
 	description: "ERC20 faucet",
-	url: "https://mywebsite.com",
-	icons: ["https://avatars.mywebsite.com/"],
+	url: "https://robofaucet.the0ph1lus.xyz/",
+	icons: ["https://avatars.githubusercontent.com/u/70820801"],
 }
 
 // 4. Create a AppKit instance
