@@ -1,84 +1,68 @@
-# ROBOTRON Faucet - Frontend Architecture
+# ROBOTRON ($RBNT) - Frontend dApp
 
-Welcome to the ROBOTRON Faucet local simulation environment. This document outlines the architectural patterns, component interactions, and state management strategies implemented in this repository. It serves as your primary reference guide for transitioning this UI into a live Web3 environment.
+A sleek, responsive, and highly dynamic Web3 Dashboard and Admin Panel built for the ROBOTRON ERC20 Token ecosystem. The application natively tracks active wallet balances, monitors live smart contract limits, decodes custom Solidity errors, and executes highly secure transactions directly onto the Lisk Sepolia network.
 
-## 🏗️ Architecture Overview
+## Technology Stack
 
-The system is built as a Single Page Application (SPA) using React, TypeScript, Vite, and `react-router-dom`. It securely separates presentational UI logic from state management and simulated blockchain interactions.
+- **Framework**: React 18 + Vite (TypeScript strict mode)
+- **Styling**: Tailwind CSS
+- **Web3 Interface**: `ethers.js` (v6)
+- **Wallet Connection**: Reown AppKit (formerly Web3Modal)
+- **Routing**: React Router DOM (v6)
+- **State Management**: React Context API (`AppContext.tsx`)
+- **Notifications**: React Toastify
 
-### Directory Structure
+## Architecture Overview
 
-- `/src/components/ui`: Dumb, reusable primitive components (`Button`, `Card`, `Badge`, `Alert`). These elements do not fetch state natively and strictly listen to props.
-- `/src/components/layout`: Structural UI handlers defining application borders (`Sidebar`, `Navbar`, `PageWrapper`).
-- `/src/components/dashboard` & `/src/components/admin`: Smart components rendering isolated blocks of logic that consume context hooks.
-- `/src/context`: React Context API manager (`AppContext.tsx`) acting as the single source of truth for global state.
-- `/src/hooks`: Custom React Hooks wrapping internal context modifiers and external asynchronous API routines.
-- `/src/pages`: Top-level route components acting as layout maps matching `react-router-dom`.
-- `/src/services`: The simulated API integration layer housing `mockContract.ts`.
+The codebase is strictly separated by concerns, ensuring components remain "dumb" (presentation-only) while custom hooks handle the complex Web3 logic.
 
----
+### 1. Global State (`src/context/`)
 
-## 🔗 State Management (React Context)
+- `AppContext.tsx`: The solitary source of truth. It stores `walletAddress`, `isConnected`, `balance`, `totalSupply`, and `owner`. Instead of executing logic directly, it purely acts as a hydration store for the rest of the application.
 
-### `AppContext.tsx`
-The underlying application architecture heavily proxies its data through `<AppContext.Provider>`.
+### 2. Web3 Hooks (`src/hooks/`)
 
-**State Interface Configuration:**
-- `isConnected` (boolean)
-- `walletAddress` (string | null)
-- `balance` (number)
-- `totalSupply` (number)
-- `lastClaimTime` (number | null)
-- `owner` (string)
+The interface layer between React and the Blockchain:
 
-**Future Integration Path:** 
-When replacing `mockContract.ts` with `ethers.js` or `viem`, you will solely modify the `init` / `connectWallet` methods inside `AppContext` to query the physical browser extensions (e.g., `window.ethereum.request({ method: 'eth_requestAccounts' })`). The component branches below are already programmed to inherit real addresses and token balances recursively without additional mapping!
+- **`useWallet.ts`**: Connects/Disconnects users via Reown AppKit.
+- **`useSyncAccount.ts`**: The heartbeat of the app. It fires upon wallet connection to hydrate the `AppContext` with the user's `$RBNT` balance, the Global Max Supply, and the Contract Owner address.
+- **`useContracts.ts`**: Exposes the generic `TokenContract` interface, abstracting whether the app needs a fast `JsonRpcProvider` (for read-only `view` operations) or a secure `JsonRpcSigner` (for write operations).
+- **`useReadContract.ts`**: Consumes `useContracts.ts` to abstract `balanceOf()`, `totalSupply()`, and `owner()` calls natively.
+- **`useWriteContract.ts`**: Handles state-mutating transactions like `mint()`, `transfer()`, `requestToken()` (Faucet), and `changeOwnership()`.
+- **`useCooldown.ts`**: Operates entirely independently on a fast, read-only JSON-RPC provider. It natively calculates the precise Unix timestamp difference between `getNextClaimTime()` and `Date.now()`, pushing a seamless countdown timer to the UI without relying on active Wallet Signers.
+- **`useActivity.ts` & `useAdminActivity.ts`**: Directly scrapes block-logs via RPC. It parses literal Ethers `Transfer`, `TokensMinted`, and `OwnershipTransferred` event arrays, seamlessly slicing and distributing exactly to the `History` and `GovernanceLog` UI arrays.
 
----
+### 3. Smart Contract Error Mapping (`src/utils/`)
 
-## 🪝 Custom Hooks Architecture
+- `handleContractError.ts`: Deeply inspects nested Reown AppKit rejection data payloads to bypass standard wallet masking. It natively unpacks and securely parses Custom Solidity Errors (e.g., `Error__CooldownNotElapsed(uint256)`) using Ethers v6 explicit interface binding.
+- `contractErrorMapper.ts`: Converts the decoded Custom Error structs into human-readable toast notifications.
 
-All simulated Web3 mutations and global fetches are strictly decoupled from the UI via local custom hooks. 
+### 4. Route Guardians (`src/App.tsx`)
 
-### `useWallet()`
-- **Purpose**: Authenticates the active user session.
-- **Methods**: `connect()`, `disconnect()`.
+- **`ProtectedRoute`**: Evaluates `useAppKitAccount()` status. If the router intercepts a `connecting` state, it visually pauses on a sleek CSS loading wheel. If the Reown wallet successfully verifies `address === state.owner`, the user is explicitly cleared to view the `/admin` terminal endpoints.
 
-### `useToken()`
-- **Purpose**: Manages interactions specifically around the core ERC20 asset (RBNT).
-- **Methods**: 
-  - `transfer(recipient, amount)`: Moves RBNT. Validates parameters locally before dispatching to the simulated chain block.
-  - `mint(recipient, amount)`: Generates raw tokens. Strictly checks if the active Context `walletAddress` matches the internal `owner` string before adjusting `totalSupply`.
+### 5. View Layer (`src/components/`)
 
-### `useFaucet()`
-- **Purpose**: Encapsulates logic for the daily faucet drip.
-- **Methods**: `claim()`. Reads the interval timers inherently to prevent invalid sub-requests.
+- **`admin/`**: High-execution terminal components (`MintCard`, `OwnershipCard`, `GovernanceLog`, `StatsPanel`). These components strictly wire to `useWriteContract.ts` and dispatch instant `sync()` commands on success to ensure global React state represents actual Blockchain reality.
+- **`dashboard/`**: The standard user suite harboring `WalletCard`, `FaucetCard` (bonded identically to `useCooldown`), `TransferCard`, and the high-speed `ActivityFeed`.
 
-### `useCooldown()`
-- **Purpose**: A strictly client-side hook performing `setInterval` visual calculations against the Unix Epoch. Monitors `lastClaimTime` from Context.
-- **Optimization Strategy**: Guaranteed to rigorously clean up its mathematical tracking interval on unmount utilizing standard `useEffect` teardown flows. This prevents potentially massive React re-render memory leaks when switching pages away from the Faucet.
+## Installation & Setup
 
----
+1. Copy `.env.example` to `.env` and fill the variables:
 
-## 🧩 Component Interaction Lifecycle
+```bash
+VITE_TOKEN_CONTRACT_ADDRESS="your_deployed_rbnt_address"
+VITE_REOWN_PROJECT_ID="your_reown_cloud_id"
+```
 
-To understand how data flows seamlessly between components, trace this standard user event flow:
+2. Install dependencies:
 
-1. **Routing (`App.tsx`)**: The active URL query is captured by the `<BrowserRouter>` and injects the corresponding page configuration into `<PageWrapper>`.
-2. **Navigation Layout (`PageWrapper.tsx`)**: Dynamically resolves if the Sidebar or Topbar should render. Viewport states for responsive side-drawers (`isCollapsed`, `isMobileOpen`) are hoisted structurally here.
-3. **Card Input (`MintCard`, `TransferCard`)**: A user enters criteria into an `<Input>` form. Upon `<form onSubmit={}>`, the component securely shifts an internal React `useState` to `'loading'`.
-4. **Hook Delegation**: The form calls its appropriate hook routine (e.g., `transfer(address, amount)`).
-5. **Contract Processing (`mockContract.ts`)**: The method executes a 1.5-second `Promise` timeout to visually emulate block gas confirmations. 
-6. **State Refresh**: Upon resolving, `mockContract.ts` natively instructs the `AppContext` context layer to silently execute `fetchTokenData()`.
-7. **UI Hydration**: The global Context immediately updates, cascading the adjusted `balance` data strictly downwards into the dumb `WalletCard` without a hard reload.
+```bash
+npm install
+```
 
----
+3. Boot the development server:
 
-## 💅 Animations & Styling Enforcement
-
-- Constructed using strict utility-class mappings through **Tailwind CSS**.
-- **Framer Motion** natively empowers `Landing.tsx` and the mobile variants of `Navbar.tsx`, exploiting declarative `<AnimatePresence>` structures for smooth interactive teardowns natively within React Virtual DOM.
-- Precise typography logic prevents text clipping. Critical properties like `whitespace-nowrap` alongside customized responsive width variables ensure buttons remain crisp from ultra-wide 4K to compact smartphone layouts.
-
----
-*Compiled securely for Phase 15 Integration Hand-off.*
+```bash
+npm run dev
+```

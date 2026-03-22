@@ -5,6 +5,7 @@ import { SpotlightGrid } from "../components/ui/SpotlightGrid"
 import { motion } from "framer-motion"
 import { useAppContext } from "../hooks/context/useAppContext"
 import { formatAddress } from "../utils/format"
+import { Link } from "react-router-dom"
 
 const Landing: React.FC = () => {
 	const { state } = useAppContext()
@@ -41,13 +42,15 @@ const Landing: React.FC = () => {
 							className="w-full sm:w-auto px-8 py-3.5 bg-[#a3e2ff] hover:bg-[#8eccee] text-[#0B0E11] font-bold rounded-md shadow-[0_0_20px_rgba(163,226,255,0.3)] transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
 							{isConnected ? formatAddress(address ?? "") : <>Connect Wallet</>}
 						</button>
-						<button className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-slate-800/50 border border-slate-700 text-[#e1e1e7] font-semibold rounded-md transition-all flex items-center justify-center gap-2 group">
+						<Link
+							to={"/dashboard"}
+							className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-slate-800/50 border border-slate-700 text-[#e1e1e7] font-semibold rounded-md transition-all flex items-center justify-center gap-2 group">
 							Enter App
 							<ArrowRight
 								size={18}
 								className="text-slate-400 group-hover:text-[#e1e1e7] transition-colors"
 							/>
-						</button>
+						</Link>
 					</div>
 				</motion.div>
 

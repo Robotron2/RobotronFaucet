@@ -1,66 +1,45 @@
-## Foundry
+# ROBOTRON ($RBNT) - Smart Contract
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A highly secure, customizable, and efficient ERC20 token deployed on the Lisk Sepolia Network. It ships strictly with built-in token-faucet logic, explicit maximum supply bounds, cooldown interval constraints, and extensive owner-managed governance methods.
 
-Foundry consists of:
+## Core Mechanics
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- **Name**: `ROBOTRON`
+- **Symbol**: `RBNT`
+- **Decimals**: `18`
+- **Max Supply**: `10,000,000 RBNT`
+- **Faucet Allocation**: Fixed at `100 RBNT` per claim.
+- **Faucet Cooldown**: Hardcoded to `24 Hours` (86,400 seconds).
 
-## Documentation
+## Security & Custom Errors
 
-https://book.getfoundry.sh/
+To massively minimize gas execution limits and explicitly improve frontend parsing potential, the contract utilizes custom Solidity `error` mappings instead of expensive traditional `require` strings:
 
-## Usage
+- `Error__NotOwner()`: Emitted when non-admins attempt to execute `mint()` or `changeOwnership()`.
+- `Error__MaxSupplyExceeded()`: Prevents arbitrary infinite minting if `totalSupply + amount > MAX_SUPPLY`.
+- `Error__CooldownNotElapsed(uint256 nextAllowedTime)`: Throws the explicit future Unix timestamp block when users attempt to drain the embedded Protocol Faucet too early.
+- `Error__ZeroAddress()` / `Error__ZeroValue()`: Rigid parameter bound validations to nullify standard ERC20 burn-failures.
+- `Error__InsufficientBalance()`: Guarding `transfer()` endpoints.
 
-### Build
+## Event Tracking
 
-```shell
-$ forge build
-```
+Custom event mappings have been implemented to allow seamless Frontend off-chain analytics tracing:
 
-### Test
+- `TokensRequested(address indexed user, uint256 amount)`: Fired directly by the `requestToken()` system.
+- `TokensMinted(address indexed to, uint256 amount)`: Emitted by the actual internal `_mint` mechanism (and specifically queried natively by the dApp `GovernanceLogs`).
+- `OwnershipTransferred(address indexed oldOwner, address indexed newOwner)`
 
-```shell
-$ forge test
-```
+## Administrator Endpoints (`onlyOwner`)
 
-### Format
+1. **`mint(address _to, uint256 _amount)`**: Native unbonded token fabrication, strictly bounded up to the immutable `MAX_SUPPLY`.
+2. **`changeOwnership(address _newOwner)`**: Hard-transfers total contract supremacy to an alternate wallet block.
 
-```shell
-$ forge fmt
-```
+## Usage Functions (Public)
 
-### Gas Snapshots
+1. **`requestToken()`**: Execute the standard 100 `$RBNT` Faucet generation algorithm (if your mapping clears the 24-hr `lastRequestTime` interval).
+2. **`canClaim(address user)`**: Explicit `view` boolean return testing if a target address has cleared the Cooldown protocol.
+3. **`getNextClaimTime(address user)`**: Pushes the exact mathematical threshold (in Unix Seconds) the user must wait before clearing `canClaim()`.
 
-```shell
-$ forge snapshot
-```
+## Deployment
 
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+Ensure your `hardhat.config.ts` or `foundry.toml` is mapped exactly to the modern `Lisk Sepolia` RPC node standard before executing standard migrations.
