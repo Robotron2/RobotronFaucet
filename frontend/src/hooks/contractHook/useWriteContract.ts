@@ -34,7 +34,7 @@ export const useWriteFunctions = () => {
 	}, [tokenContract, address])
 
 	const mintToken = useCallback(
-		async (amount: string) => {
+		async (amount: string, receiver: string) => {
 			if (!tokenContract || !address) {
 				toast.error("Wallet not connected")
 				return false
@@ -44,7 +44,7 @@ export const useWriteFunctions = () => {
 				setIsClaiming(true)
 
 				const amt = ethers.parseUnits(amount, 18)
-				const tx = await tokenContract.mint(address, amt)
+				const tx = await tokenContract.mint(receiver, amt)
 				const receipt = await tx.wait()
 
 				return receipt.status === 1
@@ -98,10 +98,38 @@ export const useWriteFunctions = () => {
 		[tokenContract],
 	)
 
+	const changeOwnershipToken = useCallback(
+		async (newOwner: string) => {
+			if (!tokenContract) {
+				toast.error("Token contract not found")
+				return false
+			}
+
+			try {
+				setIsClaiming(true) // Reusing loading state for simplicity or could add new one
+				const tx = await tokenContract.changeOwnership(newOwner)
+				const receipt = await tx.wait()
+
+				if (receipt.status === 1) {
+					toast.success(`Ownership transferred successfully to ${newOwner.slice(0, 8)}...`)
+				}
+
+				return receipt.status === 1
+			} catch (error) {
+				await handleContractError(error)
+				return false
+			} finally {
+				setIsClaiming(false)
+			}
+		},
+		[tokenContract]
+	)
+
 	return {
 		claimFaucet,
 		mintToken,
 		transferToken,
+		changeOwnershipToken,
 		isClaiming,
 		isTransferring,
 	}

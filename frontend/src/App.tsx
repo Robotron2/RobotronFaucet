@@ -13,10 +13,22 @@ import { useAppContext } from "./hooks/context/useAppContext"
 import { useSyncAccount } from "./hooks/useSyncAccount"
 import { useEffect } from "react"
 
+import { useAppKitAccount } from "@reown/appkit/react"
+
 const ProtectedRoute = ({ children, requireOwner = false }: { children: React.ReactNode, requireOwner?: boolean }) => {
 	const { state } = useAppContext()
+	const { status } = useAppKitAccount()
 	
-	if (!state.isConnected) {
+	// Prevent aggressive redirect while Reown is still fetching auth state from LocalStorage
+	if (status === "connecting" || status === "reconnecting") {
+		return (
+			<div className="h-screen w-full flex items-center justify-center bg-[#0B0E11]">
+				<div className="w-8 h-8 rounded-full border-2 border-[#a3ddff] border-t-transparent animate-spin"></div>
+			</div>
+		)
+	}
+
+	if (!state.isConnected && status === "disconnected") {
 		return <Navigate to="/" replace />
 	}
 	

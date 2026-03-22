@@ -1,8 +1,9 @@
 import { ErrorDecoder } from "ethers-decode-error"
 import { toast } from "react-toastify"
 import { mapContractError } from "./contractErrorMapper"
+import { RBNT_ABI } from "../abi/RBNT"
 
-const errorDecoder = ErrorDecoder.create()
+const errorDecoder = ErrorDecoder.create([RBNT_ABI])
 
 export const handleContractError = async (error: unknown) => {
 	try {

@@ -5,14 +5,25 @@ import { Input } from "../ui/Input"
 import { KeyRound, ArrowRightLeft, Copy, AlertTriangle } from "lucide-react"
 import { formatAddress } from "../../utils/format"
 import { useAppContext } from "../../hooks/context/useAppContext"
+import { useWriteFunctions } from "../../hooks/contractHook/useWriteContract"
+import { useSyncAccount } from "../../hooks/useSyncAccount"
+import { ethers } from "ethers"
 
 export const OwnershipCard: React.FC = () => {
 	const { state } = useAppContext()
+	const { changeOwnershipToken, isClaiming } = useWriteFunctions()
+	const { sync } = useSyncAccount()
 	const [newOwner, setNewOwner] = useState("")
 
-	const handleTransfer = (e: React.FormEvent) => {
+	const handleTransfer = async (e: React.FormEvent) => {
 		e.preventDefault()
-		// Implementation mock
+		if (!state.isConnected || isClaiming || !ethers.isAddress(newOwner)) return
+
+		const success = await changeOwnershipToken(newOwner)
+		if (success) {
+			await sync()
+			setNewOwner("")
+		}
 	}
 
 	return (
@@ -52,8 +63,9 @@ export const OwnershipCard: React.FC = () => {
 						variant="secondary"
 						className="w-full mt-2 font-bold tracking-widest uppercase py-3.5 border-slate-700 hover:border-slate-500"
 						type="submit"
-						disabled={!state.isConnected || !newOwner}>
-						<ArrowRightLeft size={16} />
+						isLoading={isClaiming}
+						disabled={!state.isConnected || !newOwner || isClaiming}>
+						<ArrowRightLeft size={16} className={isClaiming ? "hidden" : "block"} />
 						TRANSFER OWNERSHIP
 					</Button>
 				</form>

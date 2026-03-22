@@ -4,7 +4,7 @@ import { useAppContext } from "./context/useAppContext"
 
 export const useCooldown = () => {
 	const { state } = useAppContext()
-	const tokenContract = useTokenContract(true)
+	const tokenContract = useTokenContract(false) // Bind to read-only RPC provider so cooldown timers boot instantly alongside the App rather than waiting for slow Web3 Signer initialization
 	const [remainingTime, setRemainingTime] = useState<number>(0)
 	const [canClaimUser, setCanClaimUser] = useState<boolean>(false)
 

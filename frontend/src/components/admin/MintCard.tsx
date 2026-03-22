@@ -2,13 +2,16 @@ import React, { useState } from "react"
 import { Card } from "../ui/Card"
 import { Button } from "../ui/Button"
 import { Input } from "../ui/Input"
-import { useToken } from "../../hooks/useToken"
+import { useWriteFunctions } from "../../hooks/contractHook/useWriteContract"
+import { useSyncAccount } from "../../hooks/useSyncAccount"
+import { ethers } from "ethers"
 import { Zap } from "lucide-react"
 import { useAppContext } from "../../hooks/context/useAppContext"
 
 export const MintCard: React.FC = () => {
 	const { state } = useAppContext()
-	const { mint } = useToken()
+	const { mintToken } = useWriteFunctions()
+	const { sync } = useSyncAccount()
 	const [recipient, setRecipient] = useState("")
 	const [amount, setAmount] = useState("")
 	const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
@@ -18,7 +21,7 @@ export const MintCard: React.FC = () => {
 		if (!state.isConnected) return
 
 		const amt = parseFloat(amount)
-		if (isNaN(amt) || amt <= 0 || !recipient.startsWith("0x") || recipient.length !== 42) {
+		if (isNaN(amt) || amt <= 0 || !ethers.isAddress(recipient)) {
 			setStatus("error")
 			setTimeout(() => setStatus("idle"), 3000)
 			return
@@ -26,10 +29,16 @@ export const MintCard: React.FC = () => {
 
 		setStatus("loading")
 		try {
-			await mint(recipient, amt)
-			setStatus("success")
-			setRecipient("")
-			setAmount("")
+			const success = await mintToken(amount.toString(), recipient)
+			
+			if (success) {
+				await sync()
+				setStatus("success")
+				setRecipient("")
+				setAmount("")
+			} else {
+				setStatus("error")
+			}
 			setTimeout(() => setStatus("idle"), 3000)
 		} catch (err) {
 			console.log(err)
