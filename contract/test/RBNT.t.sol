@@ -49,24 +49,29 @@ contract RBNTTest is Test {
         vm.prank(owner);
         vm.expectEmit(true, true, false, false);
         emit Transfer(owner, recipient, transferAmount);
-        rbnt.transfer(recipient, transferAmount);
+        bool result = rbnt.transfer(recipient, transferAmount);
         uint256 currentOwnerBal = rbnt.balanceOf(owner);
         uint256 currentRecipientBal = rbnt.balanceOf(recipient);
 
+        assertTrue(result);
         assertEq(currentOwnerBal, prevOwnerBal - transferAmount);
         assertEq(currentRecipientBal, prevRecipientBal + transferAmount);
     }
 
     function test__transferEdgeCases() public {
         vm.startPrank(owner);
+        bool result;
 
         // Transfer more than balance → revert
         vm.expectRevert(abi.encodeWithSelector(Error__InsufficientBalance.selector));
-        rbnt.transfer(recipient, excessTransferAmount);
+        result = rbnt.transfer(recipient, excessTransferAmount);
+        assertFalse(result);
+        console.log(result);
 
         // Transfer to address(0) → revert
         vm.expectRevert(abi.encodeWithSelector(Error__ZeroAddress.selector));
-        rbnt.transfer(zeroAddress, transferAmount);
+        result = rbnt.transfer(zeroAddress, transferAmount);
+        assertFalse(result);
 
         // Transfer full balance → works
         uint256 prevOwnerBal = rbnt.balanceOf(owner);
@@ -74,7 +79,8 @@ contract RBNTTest is Test {
 
         vm.expectEmit(true, true, false, false);
         emit Transfer(owner, recipient, transferAmount);
-        rbnt.transfer(recipient, prevOwnerBal);
+        result = rbnt.transfer(recipient, prevOwnerBal);
+        assertTrue(result);
 
         uint256 currentOwnerBal = rbnt.balanceOf(owner);
         uint256 currentRecipientBal = rbnt.balanceOf(recipient);
@@ -91,12 +97,13 @@ contract RBNTTest is Test {
         // Emits Approval event
         vm.expectEmit(true, true, false, false);
         emit Approval(owner, contractAddress, approvedAmount);
-        rbnt.approve(contractAddress, approvedAmount);
+        bool result = rbnt.approve(contractAddress, approvedAmount);
 
         //check allowance
         uint256 approvedAllowance = rbnt.allowance(owner, contractAddress);
 
         // Approve sets allowance correctly (Overwriting allowance works)
+        assertTrue(result);
         assertEq(approvedAmount, approvedAllowance);
 
         vm.stopPrank();
@@ -107,7 +114,9 @@ contract RBNTTest is Test {
 
         // Approve to zero address → revert
         vm.expectRevert(abi.encodeWithSelector(Error__ZeroAddress.selector));
-        rbnt.approve(zeroAddress, approvedAmount);
+        bool result = rbnt.approve(zeroAddress, approvedAmount);
+
+        assertFalse(result);
 
         vm.stopPrank();
     }
@@ -115,7 +124,11 @@ contract RBNTTest is Test {
     function test__sucessfulTransferFrom() public {
         vm.startPrank(owner);
 
-        rbnt.approve(contractAddress, approvedAmount);
+        bool approvalStatus;
+        bool transferFromStatus;
+
+        approvalStatus = rbnt.approve(contractAddress, approvedAmount);
+        assertTrue(approvalStatus);
         //contract has allowance; contract try spend on my behalf
         uint256 recipientPrevBal = rbnt.balanceOf(recipient);
         uint256 prevAllowance = rbnt.allowance(owner, contractAddress);
@@ -126,7 +139,8 @@ contract RBNTTest is Test {
         vm.expectEmit(true, true, false, false);
         emit Transfer(owner, recipient, approvedAmount);
         // console.log(prevAllowance);
-        rbnt.transferFrom(owner, recipient, approvedAmount);
+        transferFromStatus = rbnt.transferFrom(owner, recipient, approvedAmount);
+        assertTrue(transferFromStatus);
         // Works with sufficient allowance + balance
 
         uint256 currentAllowance = rbnt.allowance(owner, contractAddress);
@@ -145,55 +159,71 @@ contract RBNTTest is Test {
     function test__transferFromEdgeCaseI() public {
         vm.startPrank(owner);
 
+        bool result;
+
         uint256 spikedAmount = approvedAmount + 200;
-        rbnt.approve(contractAddress, approvedAmount);
+        result = rbnt.approve(contractAddress, approvedAmount);
+        assertTrue(result);
         //contract has allowance; contract try spend on my behalf
 
         changePrank(contractAddress);
         // Exceeds allowance → revert
         vm.expectRevert(abi.encodeWithSelector(Error__InsufficientAllowance.selector));
-        rbnt.transferFrom(owner, recipient, spikedAmount);
+        result = rbnt.transferFrom(owner, recipient, spikedAmount);
+        assertFalse(result);
         vm.stopPrank();
     }
 
     function test__transferFromEdgeCaseII() public {
         vm.startPrank(owner);
 
+        bool status;
+
         uint256 spikedAmount = approvedAmount + 200;
-        rbnt.approve(contractAddress, spikedAmount);
+        status = rbnt.approve(contractAddress, spikedAmount);
+        assertTrue(status);
         //contract has allowance; contract try spend on my behalf
 
         changePrank(contractAddress);
 
         // Exceeds balance → revert
         vm.expectRevert(abi.encodeWithSelector(Error__InsufficientBalance.selector));
-        rbnt.transferFrom(owner, recipient, spikedAmount);
+        status = rbnt.transferFrom(owner, recipient, spikedAmount);
+        assertFalse(status);
         vm.stopPrank();
     }
 
     function test__transferFromEdgeCaseIII() public {
         vm.startPrank(owner);
 
-        rbnt.approve(contractAddress, approvedAmount);
+        bool status;
+
+        status = rbnt.approve(contractAddress, approvedAmount);
+        assertTrue(status);
 
         changePrank(contractAddress);
 
         // From = zero address → revert
         vm.expectRevert(abi.encodeWithSelector(Error__ZeroAddress.selector));
-        rbnt.transferFrom(zeroAddress, recipient, approvedAmount);
+        status = rbnt.transferFrom(zeroAddress, recipient, approvedAmount);
+        assertFalse(status);
         vm.stopPrank();
     }
 
     function test__transferFromEdgeCaseIV() public {
         vm.startPrank(owner);
 
-        rbnt.approve(contractAddress, approvedAmount);
+        bool status;
+
+        status = rbnt.approve(contractAddress, approvedAmount);
+        assertTrue(status);
 
         changePrank(contractAddress);
 
         // To = zero address → revert
         vm.expectRevert(abi.encodeWithSelector(Error__ZeroAddress.selector));
-        rbnt.transferFrom(zeroAddress, recipient, approvedAmount);
+        status = rbnt.transferFrom(zeroAddress, recipient, approvedAmount);
+        assertFalse(status);
         vm.stopPrank();
     }
 
