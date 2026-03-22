@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { Wallet, Menu, X } from "lucide-react"
 import clsx from "clsx"
 import { useWallet } from "../../hooks/useWallet"
+import { useAppContext } from "../../hooks/context/useAppContext"
 import { Link, useLocation } from "react-router-dom"
 import { AnimatePresence, motion } from "framer-motion"
 
@@ -11,9 +12,12 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ isLandingPhase = false }) => {
 	const { isConnected, handleWalletConnect } = useWallet()
+	const { state } = useAppContext()
 	const location = useLocation()
 	const currentPath = location.pathname
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+	const isOwner = state.isConnected && state.walletAddress?.toLowerCase() === state.owner?.toLowerCase()
 
 	const isDashboardActive = ["/dashboard", "/faucet", "/history", "/leaderboard", "/settings"].includes(currentPath)
 	const isAdminActive = currentPath === "/admin"
@@ -47,16 +51,18 @@ const Navbar: React.FC<NavbarProps> = ({ isLandingPhase = false }) => {
 					)}>
 					Dashboard
 				</Link>
-				<Link
-					to="/admin"
-					className={clsx(
-						"text-sm font-bold tracking-widest uppercase transition-colors h-full flex items-center border-b-[3px]",
-						isAdminActive
-							? "text-[#a3e2ff] border-[#a3e2ff]"
-							: "text-slate-400 hover:text-[#e1e1e7] border-transparent",
-					)}>
-					Admin
-				</Link>
+				{isOwner && (
+					<Link
+						to="/admin"
+						className={clsx(
+							"text-sm font-bold tracking-widest uppercase transition-colors h-full flex items-center border-b-[3px]",
+							isAdminActive
+								? "text-[#a3e2ff] border-[#a3e2ff]"
+								: "text-slate-400 hover:text-[#e1e1e7] border-transparent",
+						)}>
+						Admin
+					</Link>
+				)}
 			</nav>
 
 			{/* 3. Right Section: Action Controls */}
@@ -119,12 +125,14 @@ const Navbar: React.FC<NavbarProps> = ({ isLandingPhase = false }) => {
 								className="text-[#e1e1e7] font-bold text-lg tracking-wide border-b border-slate-800/50 pb-4">
 								Dashboard
 							</Link>
-							<Link
-								to="/admin"
-								onClick={() => setIsMobileMenuOpen(false)}
-								className="text-[#e1e1e7] font-bold text-lg tracking-wide border-b border-slate-800/50 pb-4">
-								Admin
-							</Link>
+							{isOwner && (
+								<Link
+									to="/admin"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className="text-[#e1e1e7] font-bold text-lg tracking-wide border-b border-slate-800/50 pb-4">
+									Admin
+								</Link>
+							)}
 							<button
 								onClick={() => {
 									setIsMobileMenuOpen(false)

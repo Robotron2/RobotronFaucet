@@ -1,8 +1,9 @@
 import React from "react"
-import { LayoutDashboard, Droplet, History, Trophy, Settings, HelpCircle, FileText, User } from "lucide-react"
+import { LayoutDashboard, Droplet, History, Trophy, Settings, HelpCircle, FileText, User, ShieldCheck } from "lucide-react"
 import clsx from "clsx"
 import { Link, useLocation } from "react-router-dom"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { useAppContext } from "../../hooks/context/useAppContext"
 
 interface SidebarProps {
 	isCollapsed: boolean
@@ -27,6 +28,8 @@ const bottomNavItems = [
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobileOpen, setIsCollapsed, setIsMobileOpen }) => {
 	const location = useLocation()
 	const currentPath = location.pathname
+	const { state } = useAppContext()
+	const isOwner = state.isConnected && state.walletAddress?.toLowerCase() === state.owner?.toLowerCase()
 
 	return (
 		<aside
@@ -55,11 +58,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobileOpen, setIsColla
 			{/* Main Navigation */}
 			<nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto overflow-x-hidden no-scrollbar">
 				{navItems.map((item) => {
-					const isActive = currentPath === item.path || (currentPath === "/admin" && item.name === "Settings") // Mock active state
+					const isActive = currentPath === item.path
 					return (
 						<Link
 							key={item.name}
 							to={item.path}
+							onClick={() => setIsMobileOpen(false)}
 							title={isCollapsed ? item.name : undefined}
 							className={clsx(
 								"flex items-center rounded-lg text-sm font-medium transition-colors cursor-pointer",
@@ -73,6 +77,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobileOpen, setIsColla
 						</Link>
 					)
 				})}
+				{isOwner && (
+					<Link
+						to="/admin"
+						onClick={() => setIsMobileOpen(false)}
+						title={isCollapsed ? "Admin" : undefined}
+						className={clsx(
+							"flex items-center rounded-lg text-sm font-medium transition-colors cursor-pointer",
+							isCollapsed ? "justify-center py-3 mt-1" : "gap-3 px-4 py-3 mt-1",
+							currentPath === "/admin"
+								? "bg-[#a3e2ff]/10 text-[#a3e2ff]"
+								: "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30",
+						)}>
+						<ShieldCheck size={18} className={currentPath === "/admin" ? "text-[#a3e2ff] shrink-0" : "shrink-0"} />
+						{!isCollapsed && <span className="whitespace-nowrap">Admin Terminal</span>}
+					</Link>
+				)}
 			</nav>
 
 			{/* Bottom Navigation */}
@@ -81,6 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobileOpen, setIsColla
 					<Link
 						key={item.name}
 						to={item.path}
+						onClick={() => setIsMobileOpen(false)}
 						title={isCollapsed ? item.name : undefined}
 						className={clsx(
 							"flex items-center rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 transition-colors cursor-pointer",
