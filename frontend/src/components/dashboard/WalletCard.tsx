@@ -1,12 +1,16 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Card } from "../ui/Card"
 import { formatAddress } from "../../utils/format"
 import { Copy, Check } from "lucide-react"
 import { useAppContext } from "../../hooks/context/useAppContext"
+import { useReadFunctions } from "../../hooks/contractHook/useReadContract"
+// import { useAppKitAccount } from "@reown/appkit/react"
 
 export const WalletCard: React.FC = () => {
 	const { state } = useAppContext()
+
 	const [copied, setCopied] = useState(false)
+	const { getUserBalance } = useReadFunctions()
 
 	const handleCopy = () => {
 		if (state.walletAddress) {
@@ -15,6 +19,11 @@ export const WalletCard: React.FC = () => {
 			setTimeout(() => setCopied(false), 2000)
 		}
 	}
+	useEffect(() => {
+		if (!state.walletAddress) return
+
+		getUserBalance()
+	}, [state.walletAddress, getUserBalance])
 
 	return (
 		<Card className="flex flex-col h-full bg-[#18191d] border-slate-800/60" hoverEffect={false}>
@@ -48,9 +57,10 @@ export const WalletCard: React.FC = () => {
 				<p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-2">AVAILABLE BALANCE</p>
 				<div className="flex items-baseline gap-2">
 					<span className="text-5xl font-bold text-[#a3ddff] tracking-tight">
-						{state.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+						{state.balance}
+						{/* {state.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} */}
 					</span>
-					<span className="text-xl font-bold text-[#a3ddff]">RBNT</span>
+					<span className="text-xl font-bold text-[#a3ddff]">$RBNT</span>
 				</div>
 			</div>
 		</Card>

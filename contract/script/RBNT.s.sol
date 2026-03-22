@@ -6,7 +6,7 @@ import {RBNT} from "../src/RBNT.sol";
 
 contract RBNTScript is Script {
     RBNT public rbnt;
-    uint256 constant INITIAL_SUPPLY = 1000;
+    uint256 constant INITIAL_SUPPLY = 1000 *1e18;
     uint256 deployerKey = vm.envUint("PRIVATE_KEY");
     address owner = vm.addr(deployerKey);
 

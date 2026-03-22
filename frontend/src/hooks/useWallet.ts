@@ -8,6 +8,18 @@ export const useWallet = () => {
 	const { open } = useAppKit()
 	const { address, isConnected } = useAppKitAccount()
 
+	// useEffect(() => {
+	// 	if (isConnected && address) {
+	// 		console.log(address, isConnected)
+	// 		setIsConnected(true)
+	// 		setWalletAddress(address)
+	// 		console.log(state.walletAddress)
+	// } else {
+	// 	setIsConnected(false)
+	// 	setWalletAddress(null)
+	// }
+	// }, [isConnected, address])
+
 	useEffect(() => {
 		if (isConnected && address) {
 			setIsConnected(true)
