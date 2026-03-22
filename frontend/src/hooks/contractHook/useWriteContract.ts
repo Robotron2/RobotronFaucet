@@ -72,6 +72,21 @@ export const useWriteFunctions = () => {
 				const tx = await tokenContract.transfer(receiver, amt)
 				const receipt = await tx.wait()
 
+				if (receipt.status === 1) {
+					for (const log of receipt.logs) {
+						try {
+							const parsed = tokenContract.interface.parseLog(log)
+							if (parsed?.name === "Transfer") {
+								const transferredAmount = ethers.formatUnits(parsed.args[2], 18)
+								toast.success(`Transferred ${transferredAmount} RBNT successfully!`)
+								break
+							}
+						} catch (e) {
+							// Ignored parse failures for unrelated logs
+						}
+					}
+				}
+
 				return receipt.status === 1
 			} catch (error) {
 				await handleContractError(error)

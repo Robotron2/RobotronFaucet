@@ -2,14 +2,16 @@ import React, { useState } from "react"
 import { Card } from "../ui/Card"
 import { Button } from "../ui/Button"
 import { Input } from "../ui/Input"
-
-import { useToken } from "../../hooks/useToken"
+import { useWriteFunctions } from "../../hooks/contractHook/useWriteContract"
+import { useSyncAccount } from "../../hooks/useSyncAccount"
+import { ethers } from "ethers"
 import { Send } from "lucide-react"
 import { useAppContext } from "../../hooks/context/useAppContext"
 
 export const TransferCard: React.FC = () => {
 	const { state } = useAppContext()
-	const { transfer } = useToken()
+	const { transferToken } = useWriteFunctions()
+	const { sync } = useSyncAccount()
 	const [recipient, setRecipient] = useState("")
 	const [amount, setAmount] = useState("")
 	const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
@@ -19,7 +21,7 @@ export const TransferCard: React.FC = () => {
 		if (!state.isConnected) return
 
 		const amt = parseFloat(amount)
-		if (isNaN(amt) || amt <= 0 || amt > state.balance || !recipient.startsWith("0x") || recipient.length !== 42) {
+		if (isNaN(amt) || amt <= 0 || amt > state.balance || !ethers.isAddress(recipient)) {
 			setStatus("error")
 			setTimeout(() => setStatus("idle"), 3000)
 			return
@@ -27,10 +29,15 @@ export const TransferCard: React.FC = () => {
 
 		setStatus("loading")
 		try {
-			await transfer(recipient, amt)
-			setStatus("success")
-			setRecipient("")
-			setAmount("")
+			const success = await transferToken(amount.toString(), recipient)
+			if (success) {
+				await sync()
+				setStatus("success")
+				setRecipient("")
+				setAmount("")
+			} else {
+				setStatus("error")
+			}
 			setTimeout(() => setStatus("idle"), 3000)
 		} catch (err) {
 			setStatus("error")
@@ -72,7 +79,7 @@ export const TransferCard: React.FC = () => {
 						className="bg-[#111415] border-slate-800 py-2.5 pr-12 text-sm"
 					/>
 					<span
-						className="absolute right-3 top-[28px] text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-white transition-colors"
+						className="absolute right-3 top-7 text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-white transition-colors"
 						onClick={() => state.isConnected && setAmount(state.balance.toString())}>
 						MAX
 					</span>
