@@ -5,7 +5,7 @@ import { RBNT_ABI } from "../abi/RBNT"
 import { Interface } from "ethers"
 
 const rbntInterface = new Interface(RBNT_ABI as any)
-const errorDecoder = ErrorDecoder.create([rbntInterface])
+const errorDecoder = ErrorDecoder.create([rbntInterface as any])
 
 export const handleContractError = async (error: any) => {
 	try {
