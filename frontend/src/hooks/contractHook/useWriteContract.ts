@@ -4,10 +4,12 @@ import { useCallback, useState } from "react"
 import { toast } from "react-toastify"
 import { ethers } from "ethers"
 import { handleContractError } from "../../utils/handleContractError"
+import { useSyncAccount } from "../useSyncAccount"
 
 export const useWriteFunctions = () => {
 	const tokenContract = useTokenContract(true)
 	const { address } = useAppKitAccount()
+	const { sync } = useSyncAccount()
 
 	const [isClaiming, setIsClaiming] = useState(false)
 	const [isTransferring, setIsTransferring] = useState(false)
@@ -24,6 +26,10 @@ export const useWriteFunctions = () => {
 			const tx = await tokenContract.requestToken()
 			const receipt = await tx.wait()
 
+			if (receipt.status === 1) {
+				await sync(true)
+			}
+
 			return receipt.status === 1
 		} catch (error) {
 			await handleContractError(error)
@@ -31,7 +37,7 @@ export const useWriteFunctions = () => {
 		} finally {
 			setIsClaiming(false)
 		}
-	}, [tokenContract, address])
+	}, [tokenContract, address, sync])
 
 	const mintToken = useCallback(
 		async (amount: string, receiver: string) => {
@@ -47,6 +53,10 @@ export const useWriteFunctions = () => {
 				const tx = await tokenContract.mint(receiver, amt)
 				const receipt = await tx.wait()
 
+				if (receipt.status === 1) {
+					await sync(true)
+				}
+
 				return receipt.status === 1
 			} catch (error) {
 				await handleContractError(error)
@@ -55,7 +65,7 @@ export const useWriteFunctions = () => {
 				setIsClaiming(false)
 			}
 		},
-		[tokenContract, address],
+		[tokenContract, address, sync],
 	)
 
 	const transferToken = useCallback(
@@ -73,6 +83,7 @@ export const useWriteFunctions = () => {
 				const receipt = await tx.wait()
 
 				if (receipt.status === 1) {
+					await sync(true)
 					for (const log of receipt.logs) {
 						try {
 							const parsed = tokenContract.interface.parseLog(log)
@@ -95,7 +106,7 @@ export const useWriteFunctions = () => {
 				setIsTransferring(false)
 			}
 		},
-		[tokenContract],
+		[tokenContract, sync],
 	)
 
 	const changeOwnershipToken = useCallback(
@@ -111,6 +122,7 @@ export const useWriteFunctions = () => {
 				const receipt = await tx.wait()
 
 				if (receipt.status === 1) {
+					await sync(true)
 					toast.success(`Ownership transferred successfully to ${newOwner.slice(0, 8)}...`)
 				}
 
@@ -122,7 +134,7 @@ export const useWriteFunctions = () => {
 				setIsClaiming(false)
 			}
 		},
-		[tokenContract]
+		[tokenContract, sync]
 	)
 
 	return {

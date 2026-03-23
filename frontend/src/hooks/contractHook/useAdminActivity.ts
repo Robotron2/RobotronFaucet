@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useTokenContract } from "../useContracts"
 import { useAppContext } from "../context/useAppContext"
 import { ethers, Log } from "ethers"
@@ -17,9 +17,12 @@ export const useAdminActivity = () => {
 	const tokenContract = useTokenContract(false)
 	const [logs, setLogs] = useState<AdminLog[]>([])
 	const [isLoading, setIsLoading] = useState(false)
+	const lastFetchedOwner = useRef<string | null>(null)
 
-	const fetchLogs = useCallback(async () => {
+	const fetchLogs = useCallback(async (force = false) => {
 		if (!tokenContract || !state.owner) return
+		if (!force && lastFetchedOwner.current === state.owner) return
+
 		setIsLoading(true)
 		try {
 			const provider = tokenContract.runner?.provider
@@ -110,6 +113,7 @@ export const useAdminActivity = () => {
 			)
 
 			setLogs(parsedAdminLogs)
+			lastFetchedOwner.current = state.owner
 		} catch (e) {
 			console.error("Failed to fetch admin logs:", e)
 		} finally {

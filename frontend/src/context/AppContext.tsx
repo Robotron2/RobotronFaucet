@@ -1,4 +1,4 @@
-import React, { useState, type ReactNode } from "react"
+import React, { useState, useCallback, type ReactNode } from "react"
 import type { AppContextType, AppState } from "../types/contextTypes"
 import { AppContext } from "../hooks/context/useAppContext"
 
@@ -16,12 +16,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 	const [state, setState] = useState<AppState>(INITIAL_STATE)
 
 	// === Setters ===
-	const setWalletAddress = (address: string | null) => setState((prev) => ({ ...prev, walletAddress: address }))
-	const setIsConnected = (connected: boolean) => setState((prev) => ({ ...prev, isConnected: connected }))
-	const setBalance = (balance: number) => setState((prev) => ({ ...prev, balance }))
-	const setTotalSupply = (supply: number) => setState((prev) => ({ ...prev, totalSupply: supply }))
-	const setLastClaimTime = (timestamp: number | null) => setState((prev) => ({ ...prev, lastClaimTime: timestamp }))
-	const setOwner = (ownerAddress: string) => setState((prev) => ({ ...prev, owner: ownerAddress }))
+	const setWalletAddress = useCallback((address: string | null) => setState((prev) => ({ ...prev, walletAddress: address })), [])
+	const setIsConnected = useCallback((connected: boolean) => setState((prev) => ({ ...prev, isConnected: connected })), [])
+	const setBalance = useCallback((balance: number) => setState((prev) => ({ ...prev, balance })), [])
+	const setTotalSupply = useCallback((supply: number) => setState((prev) => ({ ...prev, totalSupply: supply })), [])
+	const setLastClaimTime = useCallback((timestamp: number | null) => setState((prev) => ({ ...prev, lastClaimTime: timestamp })), [])
+	const setOwner = useCallback((ownerAddress: string) => setState((prev) => ({ ...prev, owner: ownerAddress })), [])
 
 	const value: AppContextType = {
 		state,

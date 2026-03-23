@@ -1,13 +1,11 @@
 import { useState, useCallback } from "react"
 import { useAppContext } from "./context/useAppContext"
-import { useSyncAccount } from "./useSyncAccount"
 import { useWriteFunctions } from "./contractHook/useWriteContract"
 
 export type RequestStatus = "idle" | "loading" | "success" | "error"
 
 export const useFaucet = () => {
 	const { state } = useAppContext()
-	const { sync } = useSyncAccount()
 	const { claimFaucet } = useWriteFunctions()
 
 	const [status, setStatus] = useState<RequestStatus>("idle")
@@ -32,8 +30,6 @@ export const useFaucet = () => {
 				return
 			}
 
-			await sync()
-
 			setStatus("success")
 		} catch (err: unknown) {
 			setStatus("error")
@@ -44,7 +40,7 @@ export const useFaucet = () => {
 				setErrorMessage("Failed to claim tokens")
 			}
 		}
-	}, [state.walletAddress, claimFaucet, sync])
+	}, [state.walletAddress, claimFaucet])
 
 	const resetStatus = useCallback(() => {
 		setStatus("idle")

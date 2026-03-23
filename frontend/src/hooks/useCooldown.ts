@@ -7,25 +7,29 @@ export const useCooldown = () => {
 	const tokenContract = useTokenContract(false) // Bind to read-only RPC provider so cooldown timers boot instantly alongside the App rather than waiting for slow Web3 Signer initialization
 	const [remainingTime, setRemainingTime] = useState<number>(0)
 	const [canClaimUser, setCanClaimUser] = useState<boolean>(false)
+	const [targetTimestamp, setTargetTimestamp] = useState<number | null>(null)
 
 	const fetchCooldown = useCallback(async () => {
 		if (!tokenContract || !state.walletAddress) {
 			setCanClaimUser(false)
 			setRemainingTime(0)
+			setTargetTimestamp(null)
 			return
 		}
 		try {
 			const isEligible = await tokenContract.canClaim(state.walletAddress)
 			setCanClaimUser(isEligible)
-			
+
 			if (!isEligible) {
 				const time = await tokenContract.getNextClaimTime(state.walletAddress)
 				const targetTime = Number(time) * 1000
+				setTargetTimestamp(targetTime)
 				const now = Date.now()
 				const diff = targetTime - now
 				setRemainingTime(diff > 0 ? diff : 0)
 			} else {
 				setRemainingTime(0)
+				setTargetTimestamp(null)
 			}
 		} catch (e) {
 			console.error("Failed to fetch cooldown:", e)
@@ -34,18 +38,28 @@ export const useCooldown = () => {
 
 	useEffect(() => {
 		fetchCooldown()
+	}, [fetchCooldown])
+
+	useEffect(() => {
+		if (targetTimestamp === null) {
+			setRemainingTime(0)
+			return
+		}
+
 		const intervalId = setInterval(() => {
-			setRemainingTime((prev) => {
-				if (prev <= 1000) {
-					if (prev > 0) fetchCooldown()
-					return 0
-				}
-				return prev - 1000
-			})
+			const now = Date.now()
+			const diff = targetTimestamp - now
+			if (diff <= 0) {
+				setRemainingTime(0)
+				setCanClaimUser(true)
+				setTargetTimestamp(null)
+			} else {
+				setRemainingTime(diff)
+			}
 		}, 1000)
 
 		return () => clearInterval(intervalId)
-	}, [fetchCooldown])
+	}, [targetTimestamp])
 
 	const isOnCooldown = !canClaimUser && remainingTime > 0
 

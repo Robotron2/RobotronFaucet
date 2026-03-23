@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useTokenContract } from "../useContracts"
 import { useAppContext } from "../context/useAppContext"
 import { ethers, Log } from "ethers"
@@ -18,9 +18,12 @@ export const useActivity = (limit: number = 5) => {
 	const tokenContract = useTokenContract()
 	const [activities, setActivities] = useState<ActivityLog[]>([])
 	const [isLoadingActivities, setIsLoadingActivities] = useState(false)
+	const lastFetchedWallet = useRef<string | null>(null)
 
-	const fetchActivity = useCallback(async () => {
+	const fetchActivity = useCallback(async (force = false) => {
 		if (!tokenContract || !state.walletAddress) return
+		if (!force && lastFetchedWallet.current === state.walletAddress) return
+
 		setIsLoadingActivities(true)
 		try {
 			const provider = tokenContract.runner?.provider
@@ -104,12 +107,13 @@ export const useActivity = (limit: number = 5) => {
 			)
 
 			setActivities(parsedActivities)
+			lastFetchedWallet.current = state.walletAddress
 		} catch (e) {
 			console.error("Failed to fetch activity logs:", e)
 		} finally {
 			setIsLoadingActivities(false)
 		}
-	}, [tokenContract, state.walletAddress])
+	}, [tokenContract, state.walletAddress, limit])
 
 	useEffect(() => {
 		fetchActivity()
